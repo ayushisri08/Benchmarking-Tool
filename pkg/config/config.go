@@ -1,66 +1,91 @@
+// package config
+
+// // GCPConfig holds configuration for GCP interactions
+// type GCPConfig struct {
+// 	ProjectID   string
+// 	Zone        string
+// 	NetworkName string
+// 	SourceImage string
+// }
+
+// // DefaultConfig returns default configuration
+// func DefaultConfig() *GCPConfig {
+// 	return &GCPConfig{
+// 		ProjectID:   "kouzoh-p-a-srivastava", // Set your default project ID here
+// 		Zone:        "us-central1-a",
+// 		NetworkName: "default-network",
+// 		SourceImage: "projects/debian-cloud/global/images/family/debian-11",
+// 	}
+// }
+
+
 package config
 
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
-// Config holds application configuration
-type Config struct {
+// GCPConfig holds configuration for GCP interactions
+type GCPConfig struct {
 	ProjectID   string
 	Zone        string
-	SourceImage string
 	NetworkName string
+	SourceImage string
+	WaitTime    time.Duration
 }
 
-// LoadConfig loads configuration from environment variables
-func LoadConfig() (*Config, error) {
+// LoadConfig loads configuration from .env file and environment variables
+func LoadConfig() (*GCPConfig, error) {
 	// Load .env file if it exists
-	_ = godotenv.Load()
-
-	projectID := os.Getenv("PROJECT_ID")
-	if projectID == "" {
-		return nil, fmt.Errorf("PROJECT_ID environment variable is required")
+	err := godotenv.Load()
+	if err != nil {
+		fmt.Printf("Warning: .env file not found or cannot be loaded: %v\n", err)
 	}
 
-	zone := os.Getenv("ZONE")
-	if zone == "" {
-		zone = "us-central1-a" // Default zone
+	// Get wait time from env or use default
+	waitTimeStr := getEnv("GCP_WAIT_TIME", "120")
+	waitTimeSec, err := strconv.Atoi(waitTimeStr)
+	if err != nil {
+		fmt.Printf("Warning: invalid GCP_WAIT_TIME value, using default: %v\n", err)
+		waitTimeSec = 120
 	}
 
-	sourceImage := os.Getenv("SOURCE_IMAGE")
-	if sourceImage == "" {
-		sourceImage = "projects/debian-cloud/global/images/family/debian-11"
+	config := &GCPConfig{
+		ProjectID:   getEnv("GCP_PROJECT_ID", ""),
+		Zone:        getEnv("GCP_ZONE", "us-central1-a"),
+		NetworkName: getEnv("GCP_NETWORK_NAME", "default-network"),
+		SourceImage: getEnv("GCP_SOURCE_IMAGE", "projects/debian-cloud/global/images/family/debian-11"),
+		WaitTime:    time.Duration(waitTimeSec) * time.Second,
 	}
 
-	networkName := os.Getenv("NETWORK_NAME")
-	if networkName == "" {
-		networkName = "default-network"
-	}
-
-	return &Config{
-		ProjectID:   projectID,
-		Zone:        zone,
-		SourceImage: sourceImage,
-		NetworkName: networkName,
-	}, nil
+	return config, nil
 }
 
-// GetNetworkPath returns the full path to the network resource
-func (c *Config) GetNetworkPath() string {
-	return fmt.Sprintf("projects/%s/global/networks/%s", c.ProjectID, c.NetworkName)
+// DefaultConfig returns default configuration, checking environment variables
+func DefaultConfig() *GCPConfig {
+	config, _ := LoadConfig()
+	return config
 }
 
-// GetMachineTypePath returns the full path to the machine type
-func (c *Config) GetMachineTypePath(machineType string) string {
-	return fmt.Sprintf("zones/%s/machineTypes/%s", c.Zone, machineType)
+// Validate checks if the configuration is valid
+func (c *GCPConfig) Validate() error {
+	if strings.TrimSpace(c.ProjectID) == "" {
+		return fmt.Errorf("project ID is required")
+	}
+	return nil
 }
 
-// IsValidAction checks if the provided action is valid
-func IsValidAction(action string) bool {
-	action = strings.ToLower(action)
-	return action == "create" || action == "delete" || action == "list"
+// Helper function to get environment variable with fallback
+func getEnv(key, fallback string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	return value
 }
