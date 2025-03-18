@@ -1,23 +1,3 @@
-// package config
-
-// // GCPConfig holds configuration for GCP interactions
-// type GCPConfig struct {
-// 	ProjectID   string
-// 	Zone        string
-// 	NetworkName string
-// 	SourceImage string
-// }
-
-// // DefaultConfig returns default configuration
-// func DefaultConfig() *GCPConfig {
-// 	return &GCPConfig{
-// 		ProjectID:   "kouzoh-p-a-srivastava", // Set your default project ID here
-// 		Zone:        "us-central1-a",
-// 		NetworkName: "default-network",
-// 		SourceImage: "projects/debian-cloud/global/images/family/debian-11",
-// 	}
-// }
-
 
 package config
 
