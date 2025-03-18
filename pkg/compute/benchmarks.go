@@ -5,7 +5,7 @@ import (
 	"os/exec"
 )
 
-// GetBenchmarkResults retrieves benchmark results from a VM via SSH
+// GetBenchmarkResults retrieves benchmark results from a VM instance via SSH
 func GetBenchmarkResults(projectID, zone, instanceName string) (string, error) {
 	sshCommand := fmt.Sprintf(
 		"gcloud compute ssh %s --project=%s --zone=%s --tunnel-through-iap --command 'cat /var/log/startupscript.log'",
